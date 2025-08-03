@@ -28,7 +28,7 @@
       margin-bottom: 1rem;
     }
 
-    #noteInput {
+    #noteInput, #sideSelect {
       font-size: 1rem;
       padding: 0.8rem;
       flex: 1;
@@ -106,7 +106,6 @@
       text-align: center;
     }
 
-    /* Media Queries pour mobile */
     @media (max-width: 600px) {
       body {
         margin: 2vw;
@@ -121,7 +120,7 @@
         flex-direction: column;
       }
 
-      #noteInput {
+      #noteInput, #sideSelect {
         width: 100%;
         font-size: 0.9rem;
         padding: 0.6rem;
@@ -164,6 +163,11 @@
 
   <div class="input-container">
     <input type="text" id="noteInput" placeholder="Entrez une note">
+    <select id="sideSelect">
+      <option value="Les deux">Les deux</option>
+      <option value="Droit">Droit</option>
+      <option value="Gauche">Gauche</option>
+    </select>
     <button onclick="enregistrerClic()">Valider</button>
   </div>
 
@@ -172,7 +176,7 @@
   <div id="errorMessage"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzeE4Op6sbmkAfV_IDyiTu_37bjlYCqNgXVqrzeI8mRA4XxZHBmciRm_p3iitVV-dIE/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbx2ywjlabKEr4C6l1Re-HiSmW-bZDDumeOy3qfTUqlrmvEK3uETylDoJj5LT9pp5lzA/exec";
 
     async function chargerHistorique() {
       try {
@@ -186,11 +190,10 @@
           throw new Error("Les données reçues ne sont pas un tableau");
         }
 
-        // Trier du plus récent au plus ancien
         data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const historique = document.getElementById("historique");
-        historique.innerHTML = ""; // Clear list to prevent duplicates
+        historique.innerHTML = "";
 
         if (data.length === 0) {
           const li = document.createElement("li");
@@ -204,7 +207,7 @@
             }
             const li = document.createElement("li");
             const textSpan = document.createElement("span");
-            textSpan.textContent = `• Date: ${item.timestamp}${item.note ? ' | Note: ' + item.note : ' | Note: (aucune)'}`;
+            textSpan.textContent = `• Date: ${item.timestamp}${item.note ? ' | Note: ' + item.note : ' | Note: (aucune)'} | Côté: ${item.side || 'Non spécifié'}`;
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "Supprimer";
             deleteBtn.className = "delete-btn";
@@ -217,7 +220,7 @@
         }
 
         document.getElementById("compteur").textContent = data.length > 0 
-          ? `Dernier appui : Date: ${data[0].timestamp}${data[0].note ? ' | Note: ' + data[0].note : ' | Note: (aucune)'}` 
+          ? `Dernier appui : Date: ${data[0].timestamp}${data[0].note ? ' | Note: ' + data[0].note : ' | Note: (aucune)'} | Côté: ${data[0].side || 'Non spécifié'}`
           : "Dernier appui : jamais";
 
         document.getElementById("errorMessage").textContent = "";
@@ -230,16 +233,17 @@
     async function enregistrerClic() {
       try {
         const note = document.getElementById("noteInput").value.trim();
+        const side = document.getElementById("sideSelect").value;
         if (!note) {
           alert("Veuillez entrer une note avant de valider.");
           document.getElementById("errorMessage").textContent = "Veuillez entrer une note.";
           return;
         }
-        const url = `${API_URL}?add=true&note=${encodeURIComponent(note)}`;
+        const url = `${API_URL}?add=true&note=${encodeURIComponent(note)}&side=${encodeURIComponent(side)}`;
         console.log("Envoi de la requête :", url);
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Erreur HTTP : ${res.status} ${res.statusText}`);
-        document.getElementById("noteInput").value = ''; // Clear input after submission
+        document.getElementById("noteInput").value = '';
         console.log("Clic enregistré, rechargement de l'historique...");
         await chargerHistorique();
       } catch (e) {
